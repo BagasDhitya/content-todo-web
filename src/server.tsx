@@ -1,10 +1,9 @@
-// src/server.tsx
 import express from "express";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import TodosSSRModule from "./pages/todos/server-side";
 
-const TodosSSR = TodosSSRModule.default || TodosSSRModule;
+const TodosSSR = TodosSSRModule || TodosSSRModule;
 
 const app = express();
 
