@@ -42,6 +42,7 @@ export default function Login() {
                     headers: {
                         "Content-Type": "application/json",
                     },
+                    credentials: "include", // ⬅️ WAJIB (refresh cookie)
                     body: JSON.stringify({ email, password }),
                 }
             );
@@ -52,7 +53,8 @@ export default function Login() {
                 throw new Error(data.message || "Login failed");
             }
 
-            localStorage.setItem("token", data.token);
+            // ✅ SIMPAN ACCESS TOKEN (bukan refresh)
+            localStorage.setItem("accessToken", data.accessToken);
 
             navigate("/todos/client-side");
         } catch (err) {
@@ -73,6 +75,7 @@ export default function Login() {
                     headers: {
                         "Content-Type": "application/json",
                     },
+                    credentials: "include", // ⬅️ WAJIB
                     body: JSON.stringify({
                         idToken: response.credential,
                     }),
@@ -82,10 +85,10 @@ export default function Login() {
             const data = await res.json();
 
             if (!res.ok) {
-                throw new Error(data.message);
+                throw new Error(data.message || "Google login failed");
             }
 
-            localStorage.setItem("token", data.token);
+            localStorage.setItem("accessToken", data.accessToken);
 
             navigate("/todos/client-side");
         } catch (err) {

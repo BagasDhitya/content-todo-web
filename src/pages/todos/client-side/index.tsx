@@ -15,45 +15,80 @@ export default function TodosCSR() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function fetchTodos() {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          navigate("/login");
-          return;
-        }
+  async function refreshAccessToken() {
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/auth/refresh`,
+      {
+        method: "POST",
+        credentials: "include", // ⬅️ refresh cookie
+      }
+    );
 
-        const res = await fetch(
+    if (!res.ok) {
+      throw new Error("Refresh failed");
+    }
+
+    const data = await res.json();
+    localStorage.setItem("accessToken", data.accessToken);
+    return data.accessToken;
+  }
+
+  async function fetchTodos() {
+    try {
+      let accessToken = localStorage.getItem("accessToken");
+
+      if (!accessToken) {
+        navigate("/login");
+        return;
+      }
+
+      let res = await fetch(
+        `${import.meta.env.VITE_API_URL}/todos`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          credentials: "include",
+        }
+      );
+
+      // 🔁 ACCESS TOKEN EXPIRED
+      if (res.status === 401) {
+        accessToken = await refreshAccessToken();
+
+        res = await fetch(
           `${import.meta.env.VITE_API_URL}/todos`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${accessToken}`,
             },
+            credentials: "include",
           }
         );
-
-        if (!res.ok) {
-          throw new Error("Unauthorized");
-        }
-
-        const data = await res.json();
-
-        if (!Array.isArray(data)) {
-          throw new Error("Invalid data format");
-        }
-
-        setTodos(data);
-      } catch {
-        localStorage.removeItem("token");
-        navigate("/login");
-      } finally {
-        setLoading(false);
       }
-    }
 
+      if (!res.ok) {
+        throw new Error("Unauthorized");
+      }
+
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid data format");
+      }
+
+      setTodos(data);
+    } catch (err) {
+      localStorage.removeItem("accessToken");
+      navigate("/login");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
     fetchTodos();
-  }, [navigate]);
+  }, []);
 
   if (loading) {
     return <p className="text-center mt-10">Loading...</p>;
