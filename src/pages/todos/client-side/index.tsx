@@ -38,7 +38,7 @@ export default function TodosCSR() {
       let accessToken = localStorage.getItem("accessToken");
 
       if (!accessToken) {
-        navigate("/login");
+        navigate("/auth/login");
         return;
       }
 
@@ -80,7 +80,7 @@ export default function TodosCSR() {
       setTodos(data);
     } catch (err) {
       localStorage.removeItem("accessToken");
-      navigate("/login");
+      navigate("/auth/login");
     } finally {
       setLoading(false);
     }
